@@ -1,0 +1,58 @@
+﻿<ManagementPack ContentReadable="true" SchemaVersion="2.0" OriginalSchemaVersion="1.1" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <Manifest>
+    <Identity>
+      <ID>AdhocAdam.System.Domain.User.OOOExtension</ID>
+      <Version>1.0.0.1</Version>
+    </Identity>
+    <Name>AdhocAdam- AD User Out of Office extensions</Name>
+    <References>
+      <Reference Alias="System">
+        <ID>System.Library</ID>
+        <Version>7.5.8501.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="Console">
+        <ID>Microsoft.EnterpriseManagement.ServiceManager.UI.Console</ID>
+        <Version>7.5.7487.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+    </References>
+  </Manifest>
+  <TypeDefinitions>
+    <EntityTypes>
+      <ClassTypes>
+        <ClassType ID="AdhocAdam.System.Domain.User.OOO" Accessibility="Public" Abstract="false" Base="System!System.Domain.User" Hosted="false" Singleton="false" Extension="true">
+          <Property ID="OutOfOffice" Type="bool" AutoIncrement="false" Key="false" CaseSensitive="false" MaxLength="256" MinLength="0" Required="false" Scale="0" />
+          <Property ID="OutOfOfficeEndDate" Type="datetime" AutoIncrement="false" Key="false" CaseSensitive="false" MaxLength="256" MinLength="0" Required="false" Scale="0" />
+          <Property ID="OutOfOfficeStartDate" Type="datetime" AutoIncrement="false" Key="false" CaseSensitive="false" MaxLength="256" MinLength="0" Required="false" Scale="0" />
+        </ClassType>
+      </ClassTypes>
+    </EntityTypes>
+  </TypeDefinitions>
+  <LanguagePacks>
+    <LanguagePack ID="ENU" IsDefault="true">
+      <DisplayStrings>
+        <DisplayString ElementID="AdhocAdam.System.Domain.User.OOOExtension">
+          <Name>AdhocAdam - Out of Office extensions</Name>
+          <Description>Extends Active Directory Users and Groups to support OOO concepts</Description>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdam.System.Domain.User.OOO">
+          <Name>Active Directory User or Group Out of Office</Name>
+          <Description>Provides Out of Office information for a Active Directory user or a group</Description>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdam.System.Domain.User.OOO" SubElementID="OutOfOffice">
+          <Name>Out Of Office</Name>
+          <Description>Designates OOO for the user or group</Description>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdam.System.Domain.User.OOO" SubElementID="OutOfOfficeStartDate">
+          <Name>Out Of Office Start Date</Name>
+          <Description>The datetime OOO begins for the user or group</Description>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdam.System.Domain.User.OOO" SubElementID="OutOfOfficeEndDate">
+          <Name>Out Of Office End Date</Name>
+          <Description>The datetime which OOO expires for the user or group</Description>
+        </DisplayString>
+      </DisplayStrings>
+    </LanguagePack>
+  </LanguagePacks>
+</ManagementPack>

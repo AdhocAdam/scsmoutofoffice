@@ -1,0 +1,37 @@
+<ManagementPack xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" ContentReadable="true" SchemaVersion="1.1" OriginalSchemaVersion="1.1">
+  <Manifest>
+    <Identity>
+      <ID>AdhocAdam.WorkItemAssignmentPrevention.OOO.Overrides.ServiceRequest</ID>
+      <Version>1.0.0.0</Version>
+    </Identity>
+    <Name>AdhocAdam - WorkItem Assignment Prevention OOO Overrides Service Request</Name>
+    <References>
+      <Reference Alias="System">
+        <ID>System.Library</ID>
+        <Version>7.5.8501.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="OOOWorkflows">
+        <ID>AdhocAdam.WorkItemAssignmentPrevention.OOO</ID>
+        <Version>1.0.0.6</Version>
+        <PublicKeyToken>258b49d8feb14f79</PublicKeyToken>
+      </Reference>
+    </References>
+  </Manifest>
+  <Monitoring>
+    <Overrides>
+      <RulePropertyOverride ID="EnableIncidentWorkItemPrevention" Context="System!System.Entity" Enforced="false" Rule="OOOWorkflows!AdhocAdamOOOServiceRequest" Property="Enabled">
+        <Value>true</Value>
+      </RulePropertyOverride>
+    </Overrides>
+  </Monitoring>
+  <LanguagePacks>
+    <LanguagePack ID="ENU" IsDefault="true">
+      <DisplayStrings>
+      <DisplayString ElementID="AdhocAdam.WorkItemAssignmentPrevention.OOO.Overrides.ServiceRequest">
+        <Name>AdhocAdam - Enable WorkItem Assignment Prevention on Service Requestst when Out of Office</Name>
+      </DisplayString>
+      </DisplayStrings>
+    </LanguagePack>
+  </LanguagePacks>
+</ManagementPack>

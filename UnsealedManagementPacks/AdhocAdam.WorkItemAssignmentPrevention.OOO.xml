@@ -1,0 +1,707 @@
+﻿<ManagementPack ContentReadable="true" SchemaVersion="2.0" OriginalSchemaVersion="1.1" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <Manifest>
+    <Identity>
+      <ID>AdhocAdam.WorkItemAssignmentPrevention.OOO</ID>
+      <Version>1.0.0.8</Version>
+    </Identity>
+    <Name>AdhocAdam.WorkItemAssignmentPrevention.OOO</Name>
+    <References>
+      <Reference Alias="System">
+        <ID>System.Library</ID>
+        <Version>7.5.8501.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="Console">
+        <ID>Microsoft.EnterpriseManagement.ServiceManager.UI.Console</ID>
+        <Version>7.5.7487.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="System_WorkItem_Incident_Library">
+        <ID>System.WorkItem.Incident.Library</ID>
+        <Version>7.5.7487.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="EnterpriseManagement">
+        <ID>Microsoft.EnterpriseManagement.ServiceManager.UI.Administration</ID>
+        <Version>7.5.7487.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="SystemCenter">
+        <ID>Microsoft.SystemCenter.Library</ID>
+        <Version>7.0.8437.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="SystemCenter1">
+        <ID>Microsoft.SystemCenter.Subscriptions</ID>
+        <Version>7.5.7487.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="System_WorkItem_ServiceRequest_Library">
+        <ID>System.WorkItem.ServiceRequest.Library</ID>
+        <Version>7.5.7487.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="System_WorkItem_Problem_Library">
+        <ID>System.WorkItem.Problem.Library</ID>
+        <Version>7.5.7487.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="System_WorkItem_ChangeRequest_Library">
+        <ID>System.WorkItem.ChangeRequest.Library</ID>
+        <Version>7.5.7487.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="System_WorkItem_Library">
+        <ID>System.WorkItem.Library</ID>
+        <Version>7.5.7487.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="Core">
+        <ID>ServiceManager.Core.Library</ID>
+        <Version>7.5.7487.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="Windows">
+        <ID>Microsoft.Windows.Library</ID>
+        <Version>7.5.8501.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="System_WorkItem_Activity_Library">
+        <ID>System.WorkItem.Activity.Library</ID>
+        <Version>7.5.7487.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="System_WorkItem_ReleaseRecord_Library">
+        <ID>System.WorkItem.ReleaseRecord.Library</ID>
+        <Version>7.5.7487.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+    </References>
+  </Manifest>
+  <TypeDefinitions>
+    <ModuleTypes>
+      <WriteActionModuleType ID="AdhocAdamOOOIncident.WindowsPowerShellScript.2c87db04_d882_4326_be6a_e8336b848877.MT" Accessibility="Public" RunAs="Core!Microsoft.SystemCenter.ServiceManager.WorkflowAccount" Batching="false">
+        <Configuration>
+          <IncludeSchemaTypes>
+            <SchemaType>Windows!Microsoft.Windows.PowerShellSchema</SchemaType>
+          </IncludeSchemaTypes>
+          <xsd:element name="ID" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+        </Configuration>
+        <OverrideableParameters>
+          <OverrideableParameter ID="ID" Selector="$Config/ID$" ParameterType="string" />
+        </OverrideableParameters>
+        <ModuleImplementation Isolation="Any">
+          <Composite>
+            <MemberModules>
+              <WriteAction ID="AdhocAdamOOOIncident.WindowsPowerShellScript.2c87db04_d882_4326_be6a_e8336b848877.PSWA" TypeID="Windows!Microsoft.Windows.PowerShellWriteAction">
+                <ScriptName>DoWork.ps1</ScriptName>
+                <ScriptBody>param ( [string]$ID )
+import-module smlets
+$irClass = Get-SCSMClass -name "System.WorkItem.Incident$"
+$assignedToRelClass = Get-SCSMRelationshipClass "System.WorkItemAssignedToUser$"
+$incident = Get-SCSMObject -class $irClass -filter "Name -eq '$Id'"
+$assignedToUserRelationships = Get-SCSMRelationshipObject -BySource $incident -Filter "relationshipid -eq '$($assignedToRelClass.id)'" | Sort-Object LastModified -descending | Select-Object -First 2
+$assignedToUsers = $assignedToUserRelationships | foreach-object {Get-SCSMObject -id $_.TargetObject.Id}
+if (($assignedToUsers[0].OutOfOffice -eq $true) -and ($assignedToUsers[1]))
+{
+    #New Assigned To is Out of the Office, Assign back to previous
+    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships [0]
+    New-SCSMRelationshipObject -Relationship $assignedToRelClass -Source $incident -Target $assignedToUsers[1] -bulk
+}
+if (($assignedToUsers[0].OutOfOffice -eq $true) -and !($assignedToUsers[1]))
+{
+    #New Assigned To is Out of the Office AND Previous Analyst was never set
+    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships [0]
+}</ScriptBody>
+                <SnapIns></SnapIns>
+                <Parameters>
+                  <Parameter>
+                    <Name>ID</Name>
+                    <Value>$Config/ID$</Value>
+                  </Parameter>
+                </Parameters>
+                <TimeoutSeconds>300</TimeoutSeconds>
+                <StrictErrorHandling>true</StrictErrorHandling>
+                <SerializationDepth>3</SerializationDepth>
+              </WriteAction>
+            </MemberModules>
+            <Composition>
+              <Node ID="AdhocAdamOOOIncident.WindowsPowerShellScript.2c87db04_d882_4326_be6a_e8336b848877.PSWA" />
+            </Composition>
+          </Composite>
+        </ModuleImplementation>
+        <InputType>System!System.BaseData</InputType>
+      </WriteActionModuleType>
+      <WriteActionModuleType ID="AdhocAdamOOOServiceRequest.WindowsPowerShellScript.37c6b3c2_75b6_484b_8a7d_046565cee6a3.MT" Accessibility="Public" RunAs="Core!Microsoft.SystemCenter.ServiceManager.WorkflowAccount" Batching="false">
+        <Configuration>
+          <IncludeSchemaTypes>
+            <SchemaType>Windows!Microsoft.Windows.PowerShellSchema</SchemaType>
+          </IncludeSchemaTypes>
+          <xsd:element name="ID" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+        </Configuration>
+        <OverrideableParameters>
+          <OverrideableParameter ID="ID" Selector="$Config/ID$" ParameterType="string" />
+        </OverrideableParameters>
+        <ModuleImplementation Isolation="Any">
+          <Composite>
+            <MemberModules>
+              <WriteAction ID="AdhocAdamOOOServiceRequest.WindowsPowerShellScript.37c6b3c2_75b6_484b_8a7d_046565cee6a3.PSWA" TypeID="Windows!Microsoft.Windows.PowerShellWriteAction">
+                <ScriptName>DoWork.ps1</ScriptName>
+                <ScriptBody>param ( [string]$ID )
+import-module smlets
+$srClass = Get-SCSMClass -name "System.WorkItem.ServiceRequest$"
+$assignedToRelClass = Get-SCSMRelationshipClass "System.WorkItemAssignedToUser$"
+$serviceRequest = Get-SCSMObject -class $irClass -filter "Name -eq '$Id'"
+$assignedToUserRelationships = Get-SCSMRelationshipObject -BySource $serviceRequest -Filter "relationshipid -eq '$($assignedToRelClass.id)'" | Sort-Object LastModified -descending | Select-Object -First 2
+$assignedToUsers = $assignedToUserRelationships | foreach-object {Get-SCSMObject -id $_.TargetObject.Id}
+if (($assignedToUsers[0].OutOfOffice -eq $true) -and ($assignedToUsers[1]))
+{
+    #New Assigned To is Out of the Office, Assign back to previous
+    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships [0]
+    New-SCSMRelationshipObject -Relationship $assignedToRelClass -Source $serviceRequest -Target $assignedToUsers[1] -bulk
+}
+if (($assignedToUsers[0].OutOfOffice -eq $true) -and !($assignedToUsers[1]))
+{
+    #New Assigned To is Out of the Office AND Previous Analyst was never set
+    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships [0]
+}</ScriptBody>
+                <SnapIns></SnapIns>
+                <Parameters>
+                  <Parameter>
+                    <Name>ID</Name>
+                    <Value>$Config/ID$</Value>
+                  </Parameter>
+                </Parameters>
+                <TimeoutSeconds>300</TimeoutSeconds>
+                <StrictErrorHandling>true</StrictErrorHandling>
+                <SerializationDepth>3</SerializationDepth>
+              </WriteAction>
+            </MemberModules>
+            <Composition>
+              <Node ID="AdhocAdamOOOServiceRequest.WindowsPowerShellScript.37c6b3c2_75b6_484b_8a7d_046565cee6a3.PSWA" />
+            </Composition>
+          </Composite>
+        </ModuleImplementation>
+        <InputType>System!System.BaseData</InputType>
+      </WriteActionModuleType>
+      <WriteActionModuleType ID="AdhocAdamOOOProblem.WindowsPowerShellScript.f2e63a1b_00fc_4f72_af53_2a40688e9e2c.MT" Accessibility="Public" RunAs="Core!Microsoft.SystemCenter.ServiceManager.WorkflowAccount" Batching="false">
+        <Configuration>
+          <IncludeSchemaTypes>
+            <SchemaType>Windows!Microsoft.Windows.PowerShellSchema</SchemaType>
+          </IncludeSchemaTypes>
+          <xsd:element name="ID" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+        </Configuration>
+        <OverrideableParameters>
+          <OverrideableParameter ID="ID" Selector="$Config/ID$" ParameterType="string" />
+        </OverrideableParameters>
+        <ModuleImplementation Isolation="Any">
+          <Composite>
+            <MemberModules>
+              <WriteAction ID="AdhocAdamOOOProblem.WindowsPowerShellScript.f2e63a1b_00fc_4f72_af53_2a40688e9e2c.PSWA" TypeID="Windows!Microsoft.Windows.PowerShellWriteAction">
+                <ScriptName>DoWork.ps1</ScriptName>
+                <ScriptBody>param ( [string]$ID )
+import-module smlets
+$prClass = Get-SCSMClass -name "System.WorkItem.Problem$"
+$assignedToRelClass = Get-SCSMRelationshipClass "System.WorkItemAssignedToUser$"
+$problem = Get-SCSMObject -class $prClass -filter "Name -eq '$Id'"
+$assignedToUserRelationships = Get-SCSMRelationshipObject -BySource $problem -Filter "relationshipid -eq '$($assignedToRelClass.id)'" | Sort-Object LastModified -descending | Select-Object -First 2
+$assignedToUsers = $assignedToUserRelationships | foreach-object {Get-SCSMObject -id $_.TargetObject.Id}
+if (($assignedToUsers[0].OutOfOffice -eq $true) -and ($assignedToUsers[1]))
+{
+    #Array of Relationships. New Assigned To is Out of the Office, Assign back to previous
+    $assignedToUserRelationships[0] | Remove-SCSMRelationshipObject
+    New-SCSMRelationshipObject -Relationship $assignedToRelClass -Source $problem -Target $assignedToUsers[1] -bulk
+}
+if (($assignedToUsers.OutOfOffice -eq $true) -and ($assignedToUsers.Count -eq 1))
+{
+    #Single Object. New Assigned To is Out of the Office AND Previous Analyst was never set
+    $assignedToUserRelationships | Remove-SCSMRelationshipObject
+}</ScriptBody>
+                <SnapIns></SnapIns>
+                <Parameters>
+                  <Parameter>
+                    <Name>ID</Name>
+                    <Value>$Config/ID$</Value>
+                  </Parameter>
+                </Parameters>
+                <TimeoutSeconds>300</TimeoutSeconds>
+                <StrictErrorHandling>true</StrictErrorHandling>
+                <SerializationDepth>3</SerializationDepth>
+              </WriteAction>
+            </MemberModules>
+            <Composition>
+              <Node ID="AdhocAdamOOOProblem.WindowsPowerShellScript.f2e63a1b_00fc_4f72_af53_2a40688e9e2c.PSWA" />
+            </Composition>
+          </Composite>
+        </ModuleImplementation>
+        <InputType>System!System.BaseData</InputType>
+      </WriteActionModuleType>
+      <WriteActionModuleType ID="AdhocAdamOOOChangeRequest.WindowsPowerShellScript.a7a82f51_b251_4a83_94c4_54c10a165307.MT" Accessibility="Public" RunAs="Core!Microsoft.SystemCenter.ServiceManager.WorkflowAccount" Batching="false">
+        <Configuration>
+          <IncludeSchemaTypes>
+            <SchemaType>Windows!Microsoft.Windows.PowerShellSchema</SchemaType>
+          </IncludeSchemaTypes>
+          <xsd:element name="ID" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+        </Configuration>
+        <OverrideableParameters>
+          <OverrideableParameter ID="ID" Selector="$Config/ID$" ParameterType="string" />
+        </OverrideableParameters>
+        <ModuleImplementation Isolation="Any">
+          <Composite>
+            <MemberModules>
+              <WriteAction ID="AdhocAdamOOOChangeRequest.WindowsPowerShellScript.a7a82f51_b251_4a83_94c4_54c10a165307.PSWA" TypeID="Windows!Microsoft.Windows.PowerShellWriteAction">
+                <ScriptName>DoWork.ps1</ScriptName>
+                <ScriptBody>param ( [string]$ID )
+import-module smlets
+$crClass = Get-SCSMClass -name "System.WorkItem.ChangeRequest$"
+$assignedToRelClass = Get-SCSMRelationshipClass "System.WorkItemAssignedToUser$"
+$changeRequest = Get-SCSMObject -class $crClass -filter "Name -eq '$Id'"
+$assignedToUserRelationships = Get-SCSMRelationshipObject -BySource $changeRequest -Filter "relationshipid -eq '$($assignedToRelClass.id)'" | Sort-Object LastModified -descending | Select-Object -First 2
+$assignedToUsers = $assignedToUserRelationships | foreach-object {Get-SCSMObject -id $_.TargetObject.Id}
+if (($assignedToUsers[0].OutOfOffice -eq $true) -and ($assignedToUsers[1]))
+{
+    #New Assigned To is Out of the Office, Assign back to previous
+    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships [0]
+    New-SCSMRelationshipObject -Relationship $assignedToRelClass -Source $changeRequest -Target $assignedToUsers[1] -bulk
+}
+if (($assignedToUsers[0].OutOfOffice -eq $true) -and !($assignedToUsers[1]))
+{
+    #New Assigned To is Out of the Office AND Previous Analyst was never set
+    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships [0]
+}</ScriptBody>
+                <SnapIns></SnapIns>
+                <Parameters>
+                  <Parameter>
+                    <Name>ID</Name>
+                    <Value>$Config/ID$</Value>
+                  </Parameter>
+                </Parameters>
+                <TimeoutSeconds>300</TimeoutSeconds>
+                <StrictErrorHandling>true</StrictErrorHandling>
+                <SerializationDepth>3</SerializationDepth>
+              </WriteAction>
+            </MemberModules>
+            <Composition>
+              <Node ID="AdhocAdamOOOChangeRequest.WindowsPowerShellScript.a7a82f51_b251_4a83_94c4_54c10a165307.PSWA" />
+            </Composition>
+          </Composite>
+        </ModuleImplementation>
+        <InputType>System!System.BaseData</InputType>
+      </WriteActionModuleType>
+      <WriteActionModuleType ID="AdhocAdamOOOManualActivity.WindowsPowerShellScript.b08c0d2b_0803_4a15_8283_c4e7ee69a87f.MT" Accessibility="Public" RunAs="Core!Microsoft.SystemCenter.ServiceManager.WorkflowAccount" Batching="false">
+        <Configuration>
+          <IncludeSchemaTypes>
+            <SchemaType>Windows!Microsoft.Windows.PowerShellSchema</SchemaType>
+          </IncludeSchemaTypes>
+          <xsd:element name="ID" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+        </Configuration>
+        <OverrideableParameters>
+          <OverrideableParameter ID="ID" Selector="$Config/ID$" ParameterType="string" />
+        </OverrideableParameters>
+        <ModuleImplementation Isolation="Any">
+          <Composite>
+            <MemberModules>
+              <WriteAction ID="AdhocAdamOOOManualActivity.WindowsPowerShellScript.b08c0d2b_0803_4a15_8283_c4e7ee69a87f.PSWA" TypeID="Windows!Microsoft.Windows.PowerShellWriteAction">
+                <ScriptName>DoWork.ps1</ScriptName>
+                <ScriptBody>param ( [string]$ID )
+import-module smlets
+$maClass = Get-SCSMClass -name "System.WorkItem.Activity.ManualActivity$"
+$assignedToRelClass = Get-SCSMRelationshipClass "System.WorkItemAssignedToUser$"
+$manualActivity = Get-SCSMObject -class $maClass -filter "Name -eq '$Id'"
+$assignedToUserRelationships = Get-SCSMRelationshipObject -BySource $manualActivity -Filter "relationshipid -eq '$($assignedToRelClass.id)'" | Sort-Object LastModified -descending | Select-Object -First 2
+$assignedToUsers = $assignedToUserRelationships | foreach-object {Get-SCSMObject -id $_.TargetObject.Id}
+if (($assignedToUsers[0].OutOfOffice -eq $true) -and ($assignedToUsers[1]))
+{
+    #New Assigned To is Out of the Office, Assign back to previous
+    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships [0]
+    New-SCSMRelationshipObject -Relationship $assignedToRelClass -Source $manualActivity -Target $assignedToUsers[1] -bulk
+}
+if (($assignedToUsers[0].OutOfOffice -eq $true) -and !($assignedToUsers[1]))
+{
+    #New Assigned To is Out of the Office AND Previous Analyst was never set
+    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships [0]
+}</ScriptBody>
+                <SnapIns></SnapIns>
+                <Parameters>
+                  <Parameter>
+                    <Name>ID</Name>
+                    <Value>$Config/ID$</Value>
+                  </Parameter>
+                </Parameters>
+                <TimeoutSeconds>300</TimeoutSeconds>
+                <StrictErrorHandling>true</StrictErrorHandling>
+                <SerializationDepth>3</SerializationDepth>
+              </WriteAction>
+            </MemberModules>
+            <Composition>
+              <Node ID="AdhocAdamOOOManualActivity.WindowsPowerShellScript.b08c0d2b_0803_4a15_8283_c4e7ee69a87f.PSWA" />
+            </Composition>
+          </Composite>
+        </ModuleImplementation>
+        <InputType>System!System.BaseData</InputType>
+      </WriteActionModuleType>
+      <WriteActionModuleType ID="AdhocAdamOOOReleaseRecord.WindowsPowerShellScript.03461b4c_365e_4df0_baea_4ec4d56f196d.MT" Accessibility="Public" RunAs="Core!Microsoft.SystemCenter.ServiceManager.WorkflowAccount" Batching="false">
+        <Configuration>
+          <IncludeSchemaTypes>
+            <SchemaType>Windows!Microsoft.Windows.PowerShellSchema</SchemaType>
+          </IncludeSchemaTypes>
+          <xsd:element name="ID" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+        </Configuration>
+        <OverrideableParameters>
+          <OverrideableParameter ID="ID" Selector="$Config/ID$" ParameterType="string" />
+        </OverrideableParameters>
+        <ModuleImplementation Isolation="Any">
+          <Composite>
+            <MemberModules>
+              <WriteAction ID="AdhocAdamOOOReleaseRecord.WindowsPowerShellScript.03461b4c_365e_4df0_baea_4ec4d56f196d.PSWA" TypeID="Windows!Microsoft.Windows.PowerShellWriteAction">
+                <ScriptName>DoWork.ps1</ScriptName>
+                <ScriptBody>param ( [string]$ID )
+import-module smlets
+$rrClass = Get-SCSMClass -name "System.WorkItem.ReleaseRecord$"
+$assignedToRelClass = Get-SCSMRelationshipClass "System.WorkItemAssignedToUser$"
+$releaseRequest = Get-SCSMObject -class $rrClass -filter "Name -eq '$Id'"
+$assignedToUserRelationships = Get-SCSMRelationshipObject -BySource $releaseRequest -Filter "relationshipid -eq '$($assignedToRelClass.id)'" | Sort-Object LastModified -descending | Select-Object -First 2
+$assignedToUsers = $assignedToUserRelationships | foreach-object {Get-SCSMObject -id $_.TargetObject.Id}
+if (($assignedToUsers[0].OutOfOffice -eq $true) -and ($assignedToUsers[1]))
+{
+    #Array of Relationships. New Assigned To is Out of the Office, Assign back to previous
+    $assignedToUserRelationships[0] | Remove-SCSMRelationshipObject
+    New-SCSMRelationshipObject -Relationship $assignedToRelClass -Source $releaseRequest -Target $assignedToUsers[1] -bulk
+}
+if (($assignedToUsers.OutOfOffice -eq $true) -and ($assignedToUsers.Count -eq 1))
+{
+    #Single Object. New Assigned To is Out of the Office AND Previous Analyst was never set
+    $assignedToUserRelationships | Remove-SCSMRelationshipObject
+}</ScriptBody>
+                <SnapIns></SnapIns>
+                <Parameters>
+                  <Parameter>
+                    <Name>ID</Name>
+                    <Value>$Config/ID$</Value>
+                  </Parameter>
+                </Parameters>
+                <TimeoutSeconds>300</TimeoutSeconds>
+                <StrictErrorHandling>true</StrictErrorHandling>
+                <SerializationDepth>3</SerializationDepth>
+              </WriteAction>
+            </MemberModules>
+            <Composition>
+              <Node ID="AdhocAdamOOOReleaseRecord.WindowsPowerShellScript.03461b4c_365e_4df0_baea_4ec4d56f196d.PSWA" />
+            </Composition>
+          </Composite>
+        </ModuleImplementation>
+        <InputType>System!System.BaseData</InputType>
+      </WriteActionModuleType>
+    </ModuleTypes>
+  </TypeDefinitions>
+  <Categories>
+    <Category ID="AdhocAdam.WorkItemAssignmentPrevention.OOO.Category" Value="Console!Microsoft.EnterpriseManagement.ServiceManager.ManagementPack">
+      <ManagementPackName>AdhocAdam.WorkItemAssignmentPrevention.OOO</ManagementPackName>
+      <ManagementPackVersion>1.0.0.0</ManagementPackVersion>
+    </Category>
+    <Category ID="AdhocAdamOOOIncidentCategory" Target="AdhocAdamOOOIncident" Value="EnterpriseManagement!Microsoft.EnterpriseManagement.ServiceManager.Rules.WorkflowSubscriptions" />
+    <Category ID="AdhocAdamOOOServiceRequestCategory" Target="AdhocAdamOOOServiceRequest" Value="EnterpriseManagement!Microsoft.EnterpriseManagement.ServiceManager.Rules.WorkflowSubscriptions" />
+    <Category ID="AdhocAdamOOOProblemCategory" Target="AdhocAdamOOOProblem" Value="EnterpriseManagement!Microsoft.EnterpriseManagement.ServiceManager.Rules.WorkflowSubscriptions" />
+    <Category ID="AdhocAdamOOOChangeRequestCategory" Target="AdhocAdamOOOChangeRequest" Value="EnterpriseManagement!Microsoft.EnterpriseManagement.ServiceManager.Rules.WorkflowSubscriptions" />
+    <Category ID="AdhocAdamOOOManualActivityCategory" Target="AdhocAdamOOOManualActivity" Value="EnterpriseManagement!Microsoft.EnterpriseManagement.ServiceManager.Rules.WorkflowSubscriptions" />
+    <Category ID="AdhocAdamOOOReleaseRecordCategory" Target="AdhocAdamOOOReleaseRecord" Value="EnterpriseManagement!Microsoft.EnterpriseManagement.ServiceManager.Rules.WorkflowSubscriptions" />
+  </Categories>
+  <Monitoring>
+    <Rules>
+      <Rule ID="AdhocAdamOOOIncident" Enabled="false" Target="SystemCenter!Microsoft.SystemCenter.SubscriptionWorkflowTarget" ConfirmDelivery="true" Remotable="true" Priority="Normal" DiscardLevel="100">
+        <Category>Notification</Category>
+        <DataSources>
+          <DataSource ID="DS" TypeID="SystemCenter1!Microsoft.SystemCenter.CmdbInstanceSubscription.DataSourceModule">
+            <Subscription>
+              <RelationshipSubscription RelType="$MPElement[Name='System_WorkItem_Library!System.WorkItemAssignedToUser']$" SourceType="$MPElement[Name='System_WorkItem_Incident_Library!System.WorkItem.Incident']$" TargetType="$MPElement[Name='System!System.Domain.User']$">
+                <AddRelationship></AddRelationship>
+              </RelationshipSubscription>
+              <PollingIntervalInSeconds>10</PollingIntervalInSeconds>
+              <BatchSize>100</BatchSize>
+            </Subscription>
+          </DataSource>
+        </DataSources>
+        <WriteActions>
+          <WriteAction ID="WA" TypeID="SystemCenter1!Microsoft.EnterpriseManagement.SystemCenter.Subscription.WindowsWorkflowTaskWriteAction">
+            <Subscription>
+              <WindowsWorkflowConfiguration>
+                <AssemblyName>AdhocAdamOOOIncident</AssemblyName>
+                <WorkflowTypeName>WorkflowAuthoring.AdhocAdamOOOIncident</WorkflowTypeName>
+                <WorkflowParameters>
+                  <WorkflowParameter Name="IncidentOOO_ID" Type="string">$Data/Property[@ID='$MPElement[Name="System_WorkItem_Library!System.WorkItem"]/Id$' and @State='Post']$</WorkflowParameter>
+                </WorkflowParameters>
+                <RetryExceptions></RetryExceptions>
+                <RetryDelaySeconds>60</RetryDelaySeconds>
+                <MaximumRunningTimeSeconds>300</MaximumRunningTimeSeconds>
+              </WindowsWorkflowConfiguration>
+            </Subscription>
+          </WriteAction>
+        </WriteActions>
+      </Rule>
+      <Rule ID="AdhocAdamOOOServiceRequest" Enabled="false" Target="SystemCenter!Microsoft.SystemCenter.SubscriptionWorkflowTarget" ConfirmDelivery="true" Remotable="true" Priority="Normal" DiscardLevel="100">
+        <Category>Notification</Category>
+        <DataSources>
+          <DataSource ID="DS" TypeID="SystemCenter1!Microsoft.SystemCenter.CmdbInstanceSubscription.DataSourceModule">
+            <Subscription>
+              <RelationshipSubscription RelType="$MPElement[Name='System_WorkItem_Library!System.WorkItemAssignedToUser']$" SourceType="$MPElement[Name='System_WorkItem_ServiceRequest_Library!System.WorkItem.ServiceRequest']$" TargetType="$MPElement[Name='System!System.Domain.User']$">
+                <AddRelationship></AddRelationship>
+              </RelationshipSubscription>
+              <PollingIntervalInSeconds>10</PollingIntervalInSeconds>
+              <BatchSize>100</BatchSize>
+            </Subscription>
+          </DataSource>
+        </DataSources>
+        <WriteActions>
+          <WriteAction ID="WA" TypeID="SystemCenter1!Microsoft.EnterpriseManagement.SystemCenter.Subscription.WindowsWorkflowTaskWriteAction">
+            <Subscription>
+              <WindowsWorkflowConfiguration>
+                <AssemblyName>AdhocAdamOOOServiceRequest</AssemblyName>
+                <WorkflowTypeName>WorkflowAuthoring.AdhocAdamOOOServiceRequest</WorkflowTypeName>
+                <WorkflowParameters>
+                  <WorkflowParameter Name="ServiceRequestOOO_ID" Type="string">$Data/Property[@ID='$MPElement[Name="System_WorkItem_Library!System.WorkItem"]/Id$' and @State='Post']$</WorkflowParameter>
+                </WorkflowParameters>
+                <RetryExceptions></RetryExceptions>
+                <RetryDelaySeconds>60</RetryDelaySeconds>
+                <MaximumRunningTimeSeconds>300</MaximumRunningTimeSeconds>
+              </WindowsWorkflowConfiguration>
+            </Subscription>
+          </WriteAction>
+        </WriteActions>
+      </Rule>
+      <Rule ID="AdhocAdamOOOProblem" Enabled="false" Target="SystemCenter!Microsoft.SystemCenter.SubscriptionWorkflowTarget" ConfirmDelivery="true" Remotable="true" Priority="Normal" DiscardLevel="100">
+        <Category>Notification</Category>
+        <DataSources>
+          <DataSource ID="DS" TypeID="SystemCenter1!Microsoft.SystemCenter.CmdbInstanceSubscription.DataSourceModule">
+            <Subscription>
+              <RelationshipSubscription RelType="$MPElement[Name='System_WorkItem_Library!System.WorkItemAssignedToUser']$" SourceType="$MPElement[Name='System_WorkItem_Problem_Library!System.WorkItem.Problem']$" TargetType="$MPElement[Name='System!System.Domain.User']$">
+                <AddRelationship></AddRelationship>
+              </RelationshipSubscription>
+              <PollingIntervalInSeconds>10</PollingIntervalInSeconds>
+              <BatchSize>100</BatchSize>
+            </Subscription>
+          </DataSource>
+        </DataSources>
+        <WriteActions>
+          <WriteAction ID="WA" TypeID="SystemCenter1!Microsoft.EnterpriseManagement.SystemCenter.Subscription.WindowsWorkflowTaskWriteAction">
+            <Subscription>
+              <WindowsWorkflowConfiguration>
+                <AssemblyName>AdhocAdamOOOProblem</AssemblyName>
+                <WorkflowTypeName>WorkflowAuthoring.AdhocAdamOOOProblem</WorkflowTypeName>
+                <WorkflowParameters>
+                  <WorkflowParameter Name="ProblemOOO_ID" Type="string">$Data/Property[@ID='$MPElement[Name="System_WorkItem_Library!System.WorkItem"]/Id$' and @State='Post']$</WorkflowParameter>
+                </WorkflowParameters>
+                <RetryExceptions></RetryExceptions>
+                <RetryDelaySeconds>60</RetryDelaySeconds>
+                <MaximumRunningTimeSeconds>300</MaximumRunningTimeSeconds>
+              </WindowsWorkflowConfiguration>
+            </Subscription>
+          </WriteAction>
+        </WriteActions>
+      </Rule>
+      <Rule ID="AdhocAdamOOOChangeRequest" Enabled="false" Target="SystemCenter!Microsoft.SystemCenter.SubscriptionWorkflowTarget" ConfirmDelivery="true" Remotable="true" Priority="Normal" DiscardLevel="100">
+        <Category>Notification</Category>
+        <DataSources>
+          <DataSource ID="DS" TypeID="SystemCenter1!Microsoft.SystemCenter.CmdbInstanceSubscription.DataSourceModule">
+            <Subscription>
+              <RelationshipSubscription RelType="$MPElement[Name='System_WorkItem_Library!System.WorkItemAssignedToUser']$" SourceType="$MPElement[Name='System_WorkItem_ChangeRequest_Library!System.WorkItem.ChangeRequest']$" TargetType="$MPElement[Name='System!System.Domain.User']$">
+                <AddRelationship></AddRelationship>
+              </RelationshipSubscription>
+              <PollingIntervalInSeconds>10</PollingIntervalInSeconds>
+              <BatchSize>100</BatchSize>
+            </Subscription>
+          </DataSource>
+        </DataSources>
+        <WriteActions>
+          <WriteAction ID="WA" TypeID="SystemCenter1!Microsoft.EnterpriseManagement.SystemCenter.Subscription.WindowsWorkflowTaskWriteAction">
+            <Subscription>
+              <WindowsWorkflowConfiguration>
+                <AssemblyName>AdhocAdamOOOChangeRequest</AssemblyName>
+                <WorkflowTypeName>WorkflowAuthoring.AdhocAdamOOOChangeRequest</WorkflowTypeName>
+                <WorkflowParameters>
+                  <WorkflowParameter Name="ChangeRequestOOO_ID" Type="string">$Data/Property[@ID='$MPElement[Name="System_WorkItem_Library!System.WorkItem"]/Id$' and @State='Post']$</WorkflowParameter>
+                </WorkflowParameters>
+                <RetryExceptions></RetryExceptions>
+                <RetryDelaySeconds>60</RetryDelaySeconds>
+                <MaximumRunningTimeSeconds>300</MaximumRunningTimeSeconds>
+              </WindowsWorkflowConfiguration>
+            </Subscription>
+          </WriteAction>
+        </WriteActions>
+      </Rule>
+      <Rule ID="AdhocAdamOOOManualActivity" Enabled="false" Target="SystemCenter!Microsoft.SystemCenter.SubscriptionWorkflowTarget" ConfirmDelivery="true" Remotable="true" Priority="Normal" DiscardLevel="100">
+        <Category>Notification</Category>
+        <DataSources>
+          <DataSource ID="DS" TypeID="SystemCenter1!Microsoft.SystemCenter.CmdbInstanceSubscription.DataSourceModule">
+            <Subscription>
+              <RelationshipSubscription RelType="$MPElement[Name='System_WorkItem_Library!System.WorkItemAssignedToUser']$" SourceType="$MPElement[Name='System_WorkItem_Activity_Library!System.WorkItem.Activity.ManualActivity']$" TargetType="$MPElement[Name='System!System.Domain.User']$">
+                <AddRelationship />
+              </RelationshipSubscription>
+              <PollingIntervalInSeconds>60</PollingIntervalInSeconds>
+              <BatchSize>100</BatchSize>
+            </Subscription>
+          </DataSource>
+        </DataSources>
+        <WriteActions>
+          <WriteAction ID="WA" TypeID="SystemCenter1!Microsoft.EnterpriseManagement.SystemCenter.Subscription.WindowsWorkflowTaskWriteAction">
+            <Subscription>
+              <WindowsWorkflowConfiguration>
+                <AssemblyName>AdhocAdamOOOManualActivity</AssemblyName>
+                <WorkflowTypeName>WorkflowAuthoring.AdhocAdamOOOManualActivity</WorkflowTypeName>
+                <WorkflowParameters>
+                  <WorkflowParameter Name="ManualActivityOOO_ID" Type="string">$Data/Property[@ID='$MPElement[Name="System_WorkItem_Library!System.WorkItem"]/Id$' and @State='Post']$</WorkflowParameter>
+                </WorkflowParameters>
+                <RetryExceptions></RetryExceptions>
+                <RetryDelaySeconds>60</RetryDelaySeconds>
+                <MaximumRunningTimeSeconds>300</MaximumRunningTimeSeconds>
+              </WindowsWorkflowConfiguration>
+            </Subscription>
+          </WriteAction>
+        </WriteActions>
+      </Rule>
+      <Rule ID="AdhocAdamOOOReleaseRecord" Enabled="false" Target="SystemCenter!Microsoft.SystemCenter.SubscriptionWorkflowTarget" ConfirmDelivery="true" Remotable="true" Priority="Normal" DiscardLevel="100">
+        <Category>Notification</Category>
+        <DataSources>
+          <DataSource ID="DS" TypeID="SystemCenter1!Microsoft.SystemCenter.CmdbInstanceSubscription.DataSourceModule">
+            <Subscription>
+              <RelationshipSubscription RelType="$MPElement[Name='System_WorkItem_Library!System.WorkItemAssignedToUser']$" SourceType="$MPElement[Name='System_WorkItem_ReleaseRecord_Library!System.WorkItem.ReleaseRecord']$" TargetType="$MPElement[Name='System!System.Domain.User']$">
+                <AddRelationship></AddRelationship>
+              </RelationshipSubscription>
+              <PollingIntervalInSeconds>10</PollingIntervalInSeconds>
+              <BatchSize>100</BatchSize>
+            </Subscription>
+          </DataSource>
+        </DataSources>
+        <WriteActions>
+          <WriteAction ID="WA" TypeID="SystemCenter1!Microsoft.EnterpriseManagement.SystemCenter.Subscription.WindowsWorkflowTaskWriteAction">
+            <Subscription>
+              <WindowsWorkflowConfiguration>
+                <AssemblyName>AdhocAdamOOOReleaseRecord</AssemblyName>
+                <WorkflowTypeName>WorkflowAuthoring.AdhocAdamOOOReleaseRecord</WorkflowTypeName>
+                <WorkflowParameters>
+                  <WorkflowParameter Name="ReleaseRecordOOO_ID" Type="string">$Data/Property[@ID='$MPElement[Name="System_WorkItem_Library!System.WorkItem"]/Id$' and @State='Post']$</WorkflowParameter>
+                </WorkflowParameters>
+                <RetryExceptions></RetryExceptions>
+                <RetryDelaySeconds>60</RetryDelaySeconds>
+                <MaximumRunningTimeSeconds>300</MaximumRunningTimeSeconds>
+              </WindowsWorkflowConfiguration>
+            </Subscription>
+          </WriteAction>
+        </WriteActions>
+      </Rule>
+    </Rules>
+    <Tasks>
+      <Task ID="AdhocAdamOOOIncident.WindowsPowerShellScript.2c87db04_d882_4326_be6a_e8336b848877" Accessibility="Public" Enabled="true" Target="Windows!Microsoft.Windows.Computer" Timeout="300" Remotable="true">
+        <Category>Notification</Category>
+        <WriteAction ID="AdhocAdamOOOIncident.WindowsPowerShellScript.2c87db04_d882_4326_be6a_e8336b848877.WA" TypeID="AdhocAdamOOOIncident.WindowsPowerShellScript.2c87db04_d882_4326_be6a_e8336b848877.MT">
+          <ID></ID>
+        </WriteAction>
+      </Task>
+      <Task ID="AdhocAdamOOOServiceRequest.WindowsPowerShellScript.37c6b3c2_75b6_484b_8a7d_046565cee6a3" Accessibility="Public" Enabled="true" Target="Windows!Microsoft.Windows.Computer" Timeout="300" Remotable="true">
+        <Category>Notification</Category>
+        <WriteAction ID="AdhocAdamOOOServiceRequest.WindowsPowerShellScript.37c6b3c2_75b6_484b_8a7d_046565cee6a3.WA" TypeID="AdhocAdamOOOServiceRequest.WindowsPowerShellScript.37c6b3c2_75b6_484b_8a7d_046565cee6a3.MT">
+          <ID></ID>
+        </WriteAction>
+      </Task>
+      <Task ID="AdhocAdamOOOProblem.WindowsPowerShellScript.f2e63a1b_00fc_4f72_af53_2a40688e9e2c" Accessibility="Public" Enabled="true" Target="Windows!Microsoft.Windows.Computer" Timeout="300" Remotable="true">
+        <Category>Notification</Category>
+        <WriteAction ID="AdhocAdamOOOProblem.WindowsPowerShellScript.f2e63a1b_00fc_4f72_af53_2a40688e9e2c.WA" TypeID="AdhocAdamOOOProblem.WindowsPowerShellScript.f2e63a1b_00fc_4f72_af53_2a40688e9e2c.MT">
+          <ID></ID>
+        </WriteAction>
+      </Task>
+      <Task ID="AdhocAdamOOOChangeRequest.WindowsPowerShellScript.a7a82f51_b251_4a83_94c4_54c10a165307" Accessibility="Public" Enabled="true" Target="Windows!Microsoft.Windows.Computer" Timeout="300" Remotable="true">
+        <Category>Notification</Category>
+        <WriteAction ID="AdhocAdamOOOChangeRequest.WindowsPowerShellScript.a7a82f51_b251_4a83_94c4_54c10a165307.WA" TypeID="AdhocAdamOOOChangeRequest.WindowsPowerShellScript.a7a82f51_b251_4a83_94c4_54c10a165307.MT">
+          <ID></ID>
+        </WriteAction>
+      </Task>
+      <Task ID="AdhocAdamOOOManualActivity.WindowsPowerShellScript.b08c0d2b_0803_4a15_8283_c4e7ee69a87f" Accessibility="Public" Enabled="true" Target="Windows!Microsoft.Windows.Computer" Timeout="300" Remotable="true">
+        <Category>Notification</Category>
+        <WriteAction ID="AdhocAdamOOOManualActivity.WindowsPowerShellScript.b08c0d2b_0803_4a15_8283_c4e7ee69a87f.WA" TypeID="AdhocAdamOOOManualActivity.WindowsPowerShellScript.b08c0d2b_0803_4a15_8283_c4e7ee69a87f.MT">
+          <ID></ID>
+        </WriteAction>
+      </Task>
+      <Task ID="AdhocAdamOOOReleaseRecord.WindowsPowerShellScript.03461b4c_365e_4df0_baea_4ec4d56f196d" Accessibility="Public" Enabled="true" Target="Windows!Microsoft.Windows.Computer" Timeout="300" Remotable="true">
+        <Category>Notification</Category>
+        <WriteAction ID="AdhocAdamOOOReleaseRecord.WindowsPowerShellScript.03461b4c_365e_4df0_baea_4ec4d56f196d.WA" TypeID="AdhocAdamOOOReleaseRecord.WindowsPowerShellScript.03461b4c_365e_4df0_baea_4ec4d56f196d.MT">
+          <ID></ID>
+        </WriteAction>
+      </Task>
+    </Tasks>
+  </Monitoring>
+  <LanguagePacks>
+    <LanguagePack ID="ENU" IsDefault="true">
+      <DisplayStrings>
+        <DisplayString ElementID="AdhocAdam.WorkItemAssignmentPrevention.OOO">
+          <Name>AdhocAdam - WorkItem Assignment Prevention, Out of Office</Name>
+          <Description>Prevent Assignment to users or groups that are Out of the Office</Description>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdamOOOIncident">
+          <Name>AdhocAdamOOOIncident</Name>
+          <Description>Workflow that engages on Incident Assigned To change that verifies if the new Assigned To is Out of Office.</Description>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdamOOOIncident" SubElementID="WA">
+          <Name>Workflow that engages on Incident Assigned To change that verifies if the new Assigned To is Out of Office.</Name>
+          <Description>Workflow that engages on Incident Assigned To change that verifies if the new Assigned To is Out of Office.</Description>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdamOOOServiceRequest">
+          <Name>AdhocAdamOOOServiceRequest</Name>
+          <Description>Workflow that engages on Service Request Assigned To change that verifies if the new Assigned To is Out of Office.</Description>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdamOOOServiceRequest" SubElementID="WA">
+          <Name>Workflow that engages on Service Request Assigned To change that verifies if the new Assigned To is Out of Office.</Name>
+          <Description>Workflow that engages on Service Request Assigned To change that verifies if the new Assigned To is Out of Office.</Description>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdamOOOProblem">
+          <Name>AdhocAdamOOOProblem</Name>
+          <Description>Workflow that engages on Problem Assigned To change that verifies if the new Assigned To is Out of Office.</Description>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdamOOOProblem" SubElementID="WA">
+          <Name>Workflow that engages on Problem Assigned To change that verifies if the new Assigned To is Out of Office.</Name>
+          <Description>Workflow that engages on Problem Assigned To change that verifies if the new Assigned To is Out of Office.</Description>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdamOOOChangeRequest">
+          <Name>AdhocAdamOOOChangeRequest</Name>
+          <Description>Workflow that engages on Change Request Assigned To change that verifies if the new Assigned To is Out of Office.</Description>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdamOOOChangeRequest" SubElementID="WA">
+          <Name>Workflow that engages on Change Request Assigned To change that verifies if the new Assigned To is Out of Office.</Name>
+          <Description>Workflow that engages on Change Request Assigned To change that verifies if the new Assigned To is Out of Office.</Description>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdamOOOIncident.WindowsPowerShellScript.2c87db04_d882_4326_be6a_e8336b848877">
+          <Name>AdhocAdamOOOIncident.WindowsPowerShellScript.2c87db04_d882_4326_be6a_e8336b848877</Name>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdamOOOServiceRequest.WindowsPowerShellScript.37c6b3c2_75b6_484b_8a7d_046565cee6a3">
+          <Name>AdhocAdamOOOServiceRequest.WindowsPowerShellScript.37c6b3c2_75b6_484b_8a7d_046565cee6a3</Name>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdamOOOProblem.WindowsPowerShellScript.f2e63a1b_00fc_4f72_af53_2a40688e9e2c">
+          <Name>AdhocAdamOOOProblem.WindowsPowerShellScript.f2e63a1b_00fc_4f72_af53_2a40688e9e2c</Name>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdamOOOChangeRequest.WindowsPowerShellScript.a7a82f51_b251_4a83_94c4_54c10a165307">
+          <Name>AdhocAdamOOOChangeRequest.WindowsPowerShellScript.a7a82f51_b251_4a83_94c4_54c10a165307</Name>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdamOOOManualActivity">
+          <Name>AdhocAdamOOOManualActivity</Name>
+          <Description>Workflow that engages on Manual Activity Assigned To change that verifies if the new Assigned To is Out of Office.</Description>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdamOOOManualActivity" SubElementID="WA">
+          <Name>Workflow that engages on Manual Activity Assigned To change that verifies if the new Assigned To is Out of Office.</Name>
+          <Description>Workflow that engages on Manual Activity Assigned To change that verifies if the new Assigned To is Out of Office.</Description>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdamOOOManualActivity.WindowsPowerShellScript.b08c0d2b_0803_4a15_8283_c4e7ee69a87f">
+          <Name>AdhocAdamOOOManualActivity.WindowsPowerShellScript.b08c0d2b_0803_4a15_8283_c4e7ee69a87f</Name>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdamOOOReleaseRecord">
+          <Name>AdhocAdamOOOReleaseRecord</Name>
+          <Description>Workflow that engages on Incident Assigned To change that verifies if the new Assigned To is Out of Office.</Description>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdamOOOReleaseRecord" SubElementID="WA">
+          <Name>Workflow that engages on Incident Assigned To change that verifies if the new Assigned To is Out of Office.</Name>
+          <Description>Workflow that engages on Incident Assigned To change that verifies if the new Assigned To is Out of Office.</Description>
+        </DisplayString>
+        <DisplayString ElementID="AdhocAdamOOOReleaseRecord.WindowsPowerShellScript.03461b4c_365e_4df0_baea_4ec4d56f196d">
+          <Name>AdhocAdamOOOReleaseRecord.WindowsPowerShellScript.03461b4c_365e_4df0_baea_4ec4d56f196d</Name>
+        </DisplayString>
+      </DisplayStrings>
+    </LanguagePack>
+  </LanguagePacks>
+</ManagementPack>
