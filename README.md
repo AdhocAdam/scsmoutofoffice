@@ -22,7 +22,7 @@ While this functionality is arguably a staple in other ticketing solutions, it's
 - Download the source and sign with the included key
 - Download the latest [release](https://github.com/AdhocAdam/scsmoutofoffice/releases) if you prefer not to deal with signing
 
-**Installation instructions**
+**Installation instructions - This MP requires the SMLets PowerShell module installed on your workflow server**
 1. Install the class extension MP (AdhocAdam.System.Domain.User.OOOExtension.mp) for the User Class that adds 3 Out of Office properties to users and groups within SCSM. These properties are OutOfOffice, OutOfOfficeStartDate, OutOfOfficeEndDate.
 2. Import the MP for preventing Work Item assignment, by default all of the Workflows are Disabled (AdhocAdam.WorkItemAssignmentPrevention.OOO.mp)
 3. Copy the *.DLLs to the Service Manager installation directory on your Workflow server
