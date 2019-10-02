@@ -2,7 +2,7 @@
   <Manifest>
     <Identity>
       <ID>AdhocAdam.WorkItemAssignmentPrevention.OOO</ID>
-      <Version>1.0.0.8</Version>
+      <Version>1.0.0.9</Version>
     </Identity>
     <Name>AdhocAdam.WorkItemAssignmentPrevention.OOO</Name>
     <References>
@@ -105,13 +105,13 @@ $assignedToUsers = $assignedToUserRelationships | foreach-object {Get-SCSMObject
 if (($assignedToUsers[0].OutOfOffice -eq $true) -and ($assignedToUsers[1]))
 {
     #New Assigned To is Out of the Office, Assign back to previous
-    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships [0]
+    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships[0]
     New-SCSMRelationshipObject -Relationship $assignedToRelClass -Source $incident -Target $assignedToUsers[1] -bulk
 }
 if (($assignedToUsers[0].OutOfOffice -eq $true) -and !($assignedToUsers[1]))
 {
     #New Assigned To is Out of the Office AND Previous Analyst was never set
-    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships [0]
+    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships[0]
 }</ScriptBody>
                 <SnapIns></SnapIns>
                 <Parameters>
@@ -151,19 +151,19 @@ if (($assignedToUsers[0].OutOfOffice -eq $true) -and !($assignedToUsers[1]))
 import-module smlets
 $srClass = Get-SCSMClass -name "System.WorkItem.ServiceRequest$"
 $assignedToRelClass = Get-SCSMRelationshipClass "System.WorkItemAssignedToUser$"
-$serviceRequest = Get-SCSMObject -class $irClass -filter "Name -eq '$Id'"
+$serviceRequest = Get-SCSMObject -class $srClass -filter "Name -eq '$Id'"
 $assignedToUserRelationships = Get-SCSMRelationshipObject -BySource $serviceRequest -Filter "relationshipid -eq '$($assignedToRelClass.id)'" | Sort-Object LastModified -descending | Select-Object -First 2
 $assignedToUsers = $assignedToUserRelationships | foreach-object {Get-SCSMObject -id $_.TargetObject.Id}
 if (($assignedToUsers[0].OutOfOffice -eq $true) -and ($assignedToUsers[1]))
 {
     #New Assigned To is Out of the Office, Assign back to previous
-    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships [0]
+    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships[0]
     New-SCSMRelationshipObject -Relationship $assignedToRelClass -Source $serviceRequest -Target $assignedToUsers[1] -bulk
 }
 if (($assignedToUsers[0].OutOfOffice -eq $true) -and !($assignedToUsers[1]))
 {
     #New Assigned To is Out of the Office AND Previous Analyst was never set
-    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships [0]
+    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships[0]
 }</ScriptBody>
                 <SnapIns></SnapIns>
                 <Parameters>
@@ -261,13 +261,13 @@ $assignedToUsers = $assignedToUserRelationships | foreach-object {Get-SCSMObject
 if (($assignedToUsers[0].OutOfOffice -eq $true) -and ($assignedToUsers[1]))
 {
     #New Assigned To is Out of the Office, Assign back to previous
-    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships [0]
+    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships[0]
     New-SCSMRelationshipObject -Relationship $assignedToRelClass -Source $changeRequest -Target $assignedToUsers[1] -bulk
 }
 if (($assignedToUsers[0].OutOfOffice -eq $true) -and !($assignedToUsers[1]))
 {
     #New Assigned To is Out of the Office AND Previous Analyst was never set
-    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships [0]
+    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships[0]
 }</ScriptBody>
                 <SnapIns></SnapIns>
                 <Parameters>
@@ -313,13 +313,13 @@ $assignedToUsers = $assignedToUserRelationships | foreach-object {Get-SCSMObject
 if (($assignedToUsers[0].OutOfOffice -eq $true) -and ($assignedToUsers[1]))
 {
     #New Assigned To is Out of the Office, Assign back to previous
-    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships [0]
+    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships[0]
     New-SCSMRelationshipObject -Relationship $assignedToRelClass -Source $manualActivity -Target $assignedToUsers[1] -bulk
 }
 if (($assignedToUsers[0].OutOfOffice -eq $true) -and !($assignedToUsers[1]))
 {
     #New Assigned To is Out of the Office AND Previous Analyst was never set
-    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships [0]
+    Remove-SCSMRelationshipObject -SMObject $assignedToUserRelationships[0]
 }</ScriptBody>
                 <SnapIns></SnapIns>
                 <Parameters>
